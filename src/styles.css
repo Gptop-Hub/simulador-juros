@@ -1,0 +1,174 @@
+/* Professional dark styles for the simulator */
+.app-container {
+  padding: 28px;
+  display: grid;
+  gap: 20px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.update-banner {
+  background: rgba(59, 130, 246, 0.12);
+  color: #dbeafe;
+  border: 1px solid rgba(59, 130, 246, 0.36);
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+.card-title { margin: 0 0 12px 0; color: var(--text-h); }
+
+.top {
+  display: flex;
+  gap: 20px;
+  align-items: start;
+  flex-wrap: wrap;
+}
+
+.calc-form {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02));
+  border: 1px solid rgba(255,255,255,0.04);
+  padding: 20px;
+  border-radius: 14px;
+  min-width: 300px;
+  flex: 1 1 380px;
+  box-shadow: var(--shadow);
+}
+.calc-form .row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.calc-form label {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  font-size: 14px;
+  color: var(--text);
+}
+.calc-form input,
+.calc-form select {
+  margin-top: 6px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.04);
+  background: rgba(255,255,255,0.02);
+  color: var(--text-h);
+}
+.calc-form .hint { color: var(--text); font-size: 12px; margin-top: 6px; }
+.actions { text-align: right; }
+.btn-primary {
+  background: linear-gradient(90deg,#7c3aed,#06b6d4);
+  color: white;
+  padding: 10px 16px;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-secondary {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-h);
+  padding: 10px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 10px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.btn-secondary:disabled,
+.btn-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.cards {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  align-items: stretch;
+}
+.card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02));
+  border: 1px solid rgba(255,255,255,0.04);
+  padding: 18px;
+  border-radius: 14px;
+  min-width: 200px;
+  flex: 1 1 220px;
+  box-shadow: var(--shadow);
+}
+.card.highlighted { background: linear-gradient(90deg, rgba(124,58,237,0.12), rgba(6,182,212,0.06)); }
+.card .label { color: var(--text); font-size: 13px; }
+.card .value { margin-top: 8px; font-size: 22px; font-weight: 700; color: var(--text-h); }
+.card .muted { margin-top: 8px; color: var(--text); font-size: 12px; }
+
+.explain { color: var(--text); font-size: 14px; max-width: 1100px; }
+
+.chart { background: transparent; border-radius: 12px; padding: 12px; border: 1px solid rgba(255,255,255,0.04); }
+.custom-tooltip { background: rgba(0,0,0,0.7); color: white; padding: 8px 10px; border-radius: 8px; }
+.tt-label { font-weight: 600; margin-bottom: 6px; }
+.tt-row { display:flex; justify-content:space-between; gap:12px }
+.tt-name { color: rgba(255,255,255,0.85); margin-right:8px }
+
+.table-wrap { overflow: auto; border: 1px solid rgba(255,255,255,0.04); border-radius: 12px; }
+.evolution-table { width: 100%; border-collapse: collapse; min-width: 700px; }
+.evolution-table th, .evolution-table td { padding: 12px 14px; text-align: right; border-bottom: 1px solid rgba(255,255,255,0.04); }
+.evolution-table th { text-align: left; background: rgba(255,255,255,0.02); color: var(--text); position: sticky; top: 0; }
+
+.updates-panel {
+  background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.02));
+  border: 1px solid rgba(255,255,255,0.04);
+  border-radius: 14px;
+  padding: 16px 18px;
+  text-align: left;
+}
+
+.updates-line {
+  font-size: 14px;
+  margin: 6px 0;
+}
+
+.updates-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.updates-progress-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 0 2px;
+}
+
+.updates-progress {
+  width: 240px;
+  max-width: 100%;
+}
+
+.updates-success {
+  color: #10b981;
+  font-size: 14px;
+  margin-top: 8px;
+}
+
+.updates-error {
+  color: #fca5a5;
+  font-size: 14px;
+  margin-top: 8px;
+  word-break: break-word;
+}
+
+.updates-muted {
+  color: var(--text);
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+@media (max-width: 768px) {
+  .top { flex-direction: column; }
+  .cards { flex-direction: column }
+}
