@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './styles.css'
 import CalculatorForm from './components/CalculatorForm'
 import ResultCards from './components/ResultCards'
 import EvolutionChart from './components/EvolutionChart'
 import EvolutionTable from './components/EvolutionTable'
 import { simulateCompound } from './utils/compoundInterest'
+import { formatCurrency } from './utils/formatters'
 
 const WEB_ONLY_STATUS = {
   stage: 'unavailable',
@@ -33,8 +34,37 @@ const STAGE_LABEL = {
   unavailable: 'Atualizacoes disponiveis apenas no app instalado.',
 }
 
+function formatRate(value) {
+  return Number(value || 0).toLocaleString('pt-BR', { maximumFractionDigits: 4 })
+}
+
+function rateUnitLabel(rateType) {
+  return rateType === 'annual' ? 'ao ano' : 'ao mes'
+}
+
+function periodUnitLabel(periodType) {
+  return periodType === 'years' ? 'ano(s)' : 'mes(es)'
+}
+
+function buildSummaryText(simulation, userInput) {
+  if (!simulation?.final || !userInput) return ''
+
+  return [
+    `Valor inicial: ${formatCurrency(userInput.initial)}`,
+    `Valor mensal: ${formatCurrency(userInput.monthly)}`,
+    `Taxa de juros: ${formatRate(userInput.rate)}% ${rateUnitLabel(userInput.rateType)}`,
+    `Periodo: ${userInput.period} ${periodUnitLabel(userInput.periodType)}`,
+    `Valor total final: ${formatCurrency(simulation.final.balance)}`,
+    `Valor total investido: ${formatCurrency(simulation.final.capital)}`,
+    `Total em juros: ${formatCurrency(simulation.final.totalInterest)}`,
+  ].join('\n')
+}
+
 function App() {
   const [simulation, setSimulation] = useState(null)
+  const [lastUserInput, setLastUserInput] = useState(null)
+  const [clearSignal, setClearSignal] = useState(0)
+  const [actionFeedback, setActionFeedback] = useState('')
   const [appVersion, setAppVersion] = useState('web/dev')
   const [updateStatus, setUpdateStatus] = useState(() => {
     if (typeof window === 'undefined' || !window.updates) {
@@ -45,6 +75,7 @@ function App() {
   })
   const [isCheckingUpdates, setIsCheckingUpdates] = useState(false)
   const [isApplyingUpdate, setIsApplyingUpdate] = useState(false)
+  const feedbackTimerRef = useRef(null)
   const statusText = useMemo(() => {
     return updateStatus.message || STAGE_LABEL[updateStatus.stage] || 'Status indisponivel.'
   }, [updateStatus.message, updateStatus.stage])
@@ -52,9 +83,29 @@ function App() {
   useEffect(() => {
     try {
       const raw = localStorage.getItem('lastSimulation')
-      if (raw) setSimulation(JSON.parse(raw))
-    } catch (e) {
-      /* ignore */
+      if (!raw) return
+
+      const parsed = JSON.parse(raw)
+
+      if (parsed?.simulation && parsed?.userInput) {
+        setSimulation(parsed.simulation)
+        setLastUserInput(parsed.userInput)
+        return
+      }
+
+      if (parsed?.final && parsed?.timeline) {
+        setSimulation(parsed)
+      }
+    } catch (error) {
+      console.warn('Unable to load previous simulation', error)
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (feedbackTimerRef.current) {
+        clearTimeout(feedbackTimerRef.current)
+      }
     }
   }, [])
 
@@ -115,29 +166,73 @@ function App() {
     }
   }, [])
 
-  function handleCalculate(params) {
-    const result = simulateCompound(params)
-    setSimulation(result)
+  function showFeedback(message) {
+    setActionFeedback(message)
+    if (feedbackTimerRef.current) {
+      clearTimeout(feedbackTimerRef.current)
+    }
+    feedbackTimerRef.current = setTimeout(() => {
+      setActionFeedback('')
+    }, 2500)
+  }
+
+  async function copyToClipboard(text, successMessage) {
     try {
-      localStorage.setItem('lastSimulation', JSON.stringify(result))
-    } catch (e) {
-      /* ignore */
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Clipboard API indisponivel.')
+      }
+
+      await navigator.clipboard.writeText(text)
+      showFeedback(successMessage)
+    } catch (error) {
+      console.warn('Clipboard not available', error)
+      showFeedback('Nao foi possivel copiar.')
     }
   }
 
-  function handleCopy(text) {
+  function handleCalculate(payload) {
+    const result = simulateCompound(payload.simulationInput)
+    setSimulation(result)
+    setLastUserInput(payload.userInput)
+
     try {
-      navigator.clipboard.writeText(String(text))
-    } catch (e) {
-      console.warn('Clipboard not available', e)
+      localStorage.setItem(
+        'lastSimulation',
+        JSON.stringify({
+          simulation: result,
+          userInput: payload.userInput,
+        }),
+      )
+    } catch (error) {
+      console.warn('Unable to persist simulation', error)
     }
   }
 
   function handleClear() {
     setSimulation(null)
+    setLastUserInput(null)
+    setClearSignal((current) => current + 1)
+    showFeedback('Campos limpos!')
+
     try {
       localStorage.removeItem('lastSimulation')
-    } catch (e) {}
+    } catch {}
+  }
+
+  function handleCopyInterest() {
+    if (!simulation?.final) return
+    copyToClipboard(formatCurrency(simulation.final.totalInterest), 'Juros copiado!')
+  }
+
+  function handleCopyBalance() {
+    if (!simulation?.final) return
+    copyToClipboard(formatCurrency(simulation.final.balance), 'Valor final copiado!')
+  }
+
+  function handleCopySummary() {
+    if (!simulation?.final || !lastUserInput) return
+    const summary = buildSummaryText(simulation, lastUserInput)
+    copyToClipboard(summary, 'Resumo copiado!')
   }
 
   async function handleCheckUpdates() {
@@ -196,13 +291,21 @@ function App() {
     <div className="app-container">
       <h1>Simulador de Juros Compostos</h1>
 
+      {actionFeedback && <div className="action-toast">{actionFeedback}</div>}
+
       <div className="top">
-        <CalculatorForm onCalculate={handleCalculate} />
-        <ResultCards final={simulation?.final} onCopyInterest={() => handleCopy(simulation?.final?.totalInterest)} onCopyBalance={() => handleCopy(simulation?.final?.balance)} onClear={handleClear} />
+        <CalculatorForm onCalculate={handleCalculate} clearSignal={clearSignal} />
+        <ResultCards
+          final={simulation?.final}
+          onCopyInterest={handleCopyInterest}
+          onCopyBalance={handleCopyBalance}
+          onCopySummary={handleCopySummary}
+          onClear={handleClear}
+        />
       </div>
 
-      <EvolutionChart data={simulation?.timeline} />
-      <EvolutionTable data={simulation?.timeline} />
+      <EvolutionChart data={simulation?.timeline} periodType={lastUserInput?.periodType} />
+      <EvolutionTable data={simulation?.timeline} periodType={lastUserInput?.periodType} />
 
       <section className="updates-panel">
         <h2 className="card-title">Atualizacoes</h2>
